@@ -6,22 +6,12 @@
 	<body>
 		<h1>Mark's Sensor Data</h1>
 		<hr>
-		<h3> time {{ time }} </h3>
-		<h3> LDR {{ ldrdata }} </h3>
-		<h3> accx {{ accx }} </h3>
-		<h3> accy {{ accy }} </h3>
-		<h3> accz {{ accz }} </h3>
-		<h3> gyrx {{ gyrx }} </h3>
-		<h3> gyry {{ gyry }} </h3>
-		<h3> gyrz {{ gyrz }} </h3>
-		<h3> magx {{ magx }} </h3>
-		<h3> magy {{ magy }} </h3>
-		<h3> magz {{ magz }} </h3>
-		<hr>
-		<h3> time2 {{ time2 }} </h3>
-		<h3> barodata {{ barodata }} </h3>
-		<h3> tempdata {{ tempdata }} </h3>
-		<hr>
+		<h3> {{ timeldr }}: {{ ldr }} </h3>
+		<h3> {{ timeacc }}: {{ accx }}g, {{ accy }}g, {{ accz }}g </h3>
+		<h3> {{ timegyr }}: {{ gyrx }}, {{ gyry }}, {{ gyrz }} </h3>
+		<h3> {{ timemag }}: {{ magx }}, {{ magy }}, {{ magz }} </h3>
+		<h3> {{ timeprs }}: {{ prs }} Pascals </h3>
+		<h3> {{ timetmp }}: {{ tmp }} oC </h3>
 		<h3> <a href="/" class="button">REFRESH</a></h3>
 		<hr>
 		<p> @2022 Developed by Mark</p>

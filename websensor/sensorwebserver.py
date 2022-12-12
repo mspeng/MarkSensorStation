@@ -10,47 +10,54 @@ app = fl.Flask(__name__)
 def getData():
     conn=sqlite3.connect('../sensorsData.db')
     curs=conn.cursor()
-    #for row in curs.execute("SELECT * FROM SENSOR1DATA ORDER BY timestamp DESC LIMIT 1"):
-    for row in curs.execute("SELECT * FROM SENSOR1DATA WHERE timestamp=(SELECT MAX(timestamp) FROM SENSOR1DATA)"):
-        time = str(row[0])
-        ldrdata = row[1]
-        accx,accy,accz = row[2],row[3],row[4]
-        gyrx,gyry,gyrz = row[5],row[6],row[7]
-        magx,magy,magz = row[8],row[9],row[10]
-    #for row in curs.execute("SELECT * FROM SENSOR2DATA ORDER BY timestamp DESC LIMIT 1"):
-    for row in curs.execute("SELECT * FROM SENSOR2DATA WHERE timestamp=(SELECT MAX(timestamp) FROM SENSOR2DATA)"):
-        time2 = str(row[0])
-        barodata = row[1]
-        tempdata = row[2]
+    for row in curs.execute("SELECT * FROM ldrdata WHERE timestamp=(SELECT MAX(timestamp) FROM ldrdata)"):
+        timeldr = str(row[0])
+        ldr = row[1]
+    for row in curs.execute("SELECT * FROM accdata WHERE timestamp=(SELECT MAX(timestamp) FROM accdata)"):
+        timeacc = str(row[0])
+        accx,accy,accz = row[1],row[2],row[3]
+    for row in curs.execute("SELECT * FROM gyrdata WHERE timestamp=(SELECT MAX(timestamp) FROM gyrdata)"):
+        timegyr = str(row[0])
+        gyrx,gyry,gyrz = row[1],row[2],row[3]
+    for row in curs.execute("SELECT * FROM magdata WHERE timestamp=(SELECT MAX(timestamp) FROM magdata)"):
+        timemag = str(row[0])
+        magx,magy,magz = row[1],row[2],row[3]
+    for row in curs.execute("SELECT * FROM prsdata WHERE timestamp=(SELECT MAX(timestamp) FROM prsdata)"):
+        timeprs = str(row[0])
+        prs = row[1]
+    for row in curs.execute("SELECT * FROM tmpdata WHERE timestamp=(SELECT MAX(timestamp) FROM tmpdata)"):
+        timetmp = str(row[0])
+        tmp = row[1]
     conn.close()
 
-    return time,ldrdata,accx,accy,accz,gyrx,gyry,gyrz,magx,magy,magz,time2,barodata,tempdata
-#    return 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    return timeldr,ldr,timeacc,accx,accy,accz,timegyr,gyrx,gyry,gyrz,timemag,magx,magy,magz,timeprs,prs,timetmp,tmp
 
 # main route
 @app.route("/")
 def index():
-    time,ldrdata,accx,accy,accz,gyrx,gyry,gyrz,magx,magy,magz,time2,barodata,tempdata = getData()
+    timeldr,ldr,timeacc,accx,accy,accz,timegyr,gyrx,gyry,gyrz,timemag,magx,magy,magz,timeprs,prs,timetmp,tmp = getData()
     templateData = {
-            'time' : time,
-            'ldrdata' : ldrdata,
-            'accx' : accx,
-            'accy' : accy,
-            'accz' : accz,
+            'timeldr' : timeldr,
+            'ldr' : ldr,
+            'timeacc' : timeacc,
+            'accx' : accx/1000,
+            'accy' : accy/1000,
+            'accz' : accz/1000,
+            'timegyr' : timegyr,
             'gyrx' : gyrx,
             'gyry' : gyry,
             'gyrz' : gyrz,
+            'timemag' : timemag,
             'magx' : magx,
             'magy' : magy,
             'magz' : magz,
-            'time2' : time2,
-            'barodata' : barodata,
-            'tempdata' : tempdata
+            'timeprs' : timeprs,
+            'prs'  : prs/100,
+            'timetmp' : timetmp,
+            'tmp' : tmp/10
     }
     return fl.render_template('index.html', **templateData)
-    #return fl.render_template('index2.html')
 
 if __name__ == "__main__":
-    #print(getData())
     app.run(host='0.0.0.0', port=80, debug=False)
 

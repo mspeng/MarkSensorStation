@@ -2,11 +2,13 @@
 
 # Script for repeated getting info
 
+import sys
 import serial
 import datetime
 import sqlite3
 
 ## Definitions
+RETRIES = 10
 # sensor board XplainedA3BU, based on my own definitions
 CODE_LDR = '82'
 CODE_ACC = '83'
@@ -37,10 +39,23 @@ def getsensor3data(serport,code):
         zcomp = bytestoint(serport.read(4))
     return xcomp, ycomp, zcomp
 
+def outtol1(val1, val2, tol):
+    return (abs(val1-val2) > tol)
+
+def outtol3(val1x, val1y, val1z, val2x, val2y, val2z, tol):
+    return ((val1x-val2x)**2 + (val1y-val2y)**2 + (val1z-val2z)**2)**0.5 > tol
+
 ## Parameters
 devport = '/dev/ttyACM0'
 dbfn = 'sensorsData.db'
 numpersec = 10
+timetol =  datetime.timedelta(seconds=2/numpersec)
+ldrtol = 2  #
+acctol = 50 # 1/100 g
+gyrtol = 10
+magtol = 10
+prstol = 100 # 1 Pascal
+tmptol = 2 # 1/10 degrees Celsius
 
 ## Main
 # open serial port and flush
@@ -52,71 +67,201 @@ ser.flushOutput()
 # open database
 con = sqlite3.connect(dbfn)
 
+# Initial data set, for comparison to determine if new values should
+# be written to database or not
+entryLi = []
+# LDR
+for i in range(RETRIES):
+    ldr = getsensor1data(ser, CODE_LDR)
+    nowDT = datetime.datetime.now()
+    if ldr is not None:
+        entrystr = "INSERT INTO ldrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % ldr + ")"
+        entryLi.append(entrystr)
+        oldldr = ldr
+        oldldrDT = nowDT
+        break
+else:
+    # could not get data something is wrong
+    sys.exit()
+# Accelerometer
+for i in range(RETRIES):
+    accx, accy, accz = getsensor3data(ser, CODE_ACC)
+    nowDT = datetime.datetime.now()
+    if accx is not None and accy is not None and accz is not None:
+        entrystr = "INSERT INTO accdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (accx, accy, accz) + ")"
+        entryLi.append(entrystr)
+        oldaccx,oldaccy,oldaccz = accx,accy,accz
+        oldaccDT = nowDT
+        break
+else:
+    # could not get data something is wrong
+    sys.exit()
+# Gyroscope
+for i in range(RETRIES):
+    gyrx, gyry, gyrz = getsensor3data(ser, CODE_GYR)
+    nowDT = datetime.datetime.now()
+    if gyrx is not None and gyry is not None and gyrz is not None:
+        entrystr = "INSERT INTO gyrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (gyrx, gyry, gyrz) + ")"
+        entryLi.append(entrystr)
+        oldgyrx,oldgyry,oldgyrz = gyrx,gyry,gyrz
+        oldgyrDT = nowDT
+        break
+else:
+    # could not get data something is wrong
+    sys.exit()
+# Magnetometer
+for i in range(RETRIES):
+    magx, magy, magz = getsensor3data(ser, CODE_MAG)
+    nowDT = datetime.datetime.now()
+    if magx is not None and magy is not None and magz is not None:
+        entrystr = "INSERT INTO magdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (magx, magy, magz) + ")"
+        entryLi.append(entrystr)
+        oldmagx,oldmagy,oldmagz = magx,magy,magz
+        oldmagDT = nowDT
+        break
+else:
+    # could not get data something is wrong
+    sys.exit()
+# Pressure
+for i in range(RETRIES):
+    prs = getsensor1data(ser, CODE_PRS)
+    nowDT = datetime.datetime.now()
+    if prs is not None:
+        entrystr = "INSERT INTO prsdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % prs + ")"
+        entryLi.append(entrystr)
+        oldprs = prs
+        oldprsDT = nowDT
+        break
+else:
+    # could not get data something is wrong
+    sys.exit()
+# Temperature
+for i in range(RETRIES):
+    tmp = getsensor1data(ser, CODE_TMP)
+    nowDT = datetime.datetime.now()
+    if tmp is not None:
+        entrystr = "INSERT INTO tmpdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % tmp + ")"
+        entryLi.append(entrystr)
+        oldtmp = tmp
+        oldtmpDT = nowDT
+        break
+else:
+    # could not get data something is wrong
+    sys.exit()
+
+## Add entries into database
+with con:
+    cur = con.cursor()
+    for entry in entryLi:
+        print(datetime.datetime.now(), "Added",entry)
+        cur.execute(entry)
+
+# next time to take data
 nexttime = datetime.datetime.now() + datetime.timedelta(seconds=1/numpersec)
 
 while True:
-    entry1Li = []
-    for i in range(numpersec):
-        while datetime.datetime.now() < nexttime: pass
-        entrystr = "INSERT INTO SENSOR1data VALUES(" + "'%s', " % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
+    entryLi = []
+    while datetime.datetime.now() < nexttime: pass
 
-        # LDR
-        ldrdata = getsensor1data(ser, CODE_LDR)
-        if ldrdata is not None:
-            entrystr += "%d, " % ldrdata
-        else:
-            entrystr += "NA, "
+    # LDR - insert value only if it changed outside tolerance
+    ldr = getsensor1data(ser, CODE_LDR)
+    if ldr is not None and outtol1(ldr,oldldr,ldrtol):
+        nowDT = datetime.datetime.now()
+        # only write old value if far enough in time
+        if abs(nowDT-oldldrDT) > timetol:
+            entrystr = "INSERT INTO ldrdata VALUES(" + "'%s', " % oldldrDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % oldldr + ")"
+            entryLi.append(entrystr)
+        entrystr = "INSERT INTO ldrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % ldr + ")"
+        entryLi.append(entrystr)
+        oldldr = ldr
+        oldldrDT = nowDT
+    else:
+        oldldrDT = nowDT
 
-        # Accel
-        accx, accy, accz = getsensor3data(ser, CODE_ACC)
-        if accx is not None and accy is not None and accz is not None:
-            entrystr += "%d, %d, %d, " % (accx, accy, accz)
-        else:
-            entrystr += "NA, NA, NA, "
+    # Accel
+    accx, accy, accz = getsensor3data(ser, CODE_ACC)
+    if accx is not None and accy is not None and accz is not None and outtol3(accx, accy, accz, oldaccx, oldaccy, oldaccz, acctol):
+        nowDT = datetime.datetime.now()
+        # only write old value if far enough in time
+        if abs(nowDT-oldaccDT) > timetol:
+            entrystr = "INSERT INTO accdata VALUES(" + "'%s', " % oldaccDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (oldaccx, oldaccy, oldaccz) + ")"
+            entryLi.append(entrystr)
+        entrystr = "INSERT INTO accdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (accx, accy, accz) + ")"
+        entryLi.append(entrystr)
+        oldaccx,oldaccy,oldaccz = accx,accy,accz
+        oldaccDT = nowDT
+    else:
+        oldaccDT = nowDT
 
-        # Gyro
-        gyrx, gyry, gyrz = getsensor3data(ser, CODE_GYR)
-        if gyrx is not None and gyry is not None and gyrz is not None:
-            entrystr += "%d, %d, %d, " % (gyrx, gyry, gyrz)
-        else:
-            entrystr += "NA, NA, NA, "
+    # Gyro
+    gyrx, gyry, gyrz = getsensor3data(ser, CODE_GYR)
+    if gyrx is not None and gyry is not None and gyrz is not None and outtol3(gyrx, gyry, gyrz, oldgyrx, oldgyry, oldgyrz, gyrtol):
+        nowDT = datetime.datetime.now()
+        # only write old value if far enough in time
+        if abs(nowDT-oldgyrDT) > timetol:
+            entrystr = "INSERT INTO gyrdata VALUES(" + "'%s', " % oldgyrDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (oldgyrx, oldgyry, oldgyrz) + ")"
+            entryLi.append(entrystr)
+        entrystr = "INSERT INTO gyrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (gyrx, gyry, gyrz) + ")"
+        entryLi.append(entrystr)
+        oldgyrx,oldgyry,oldgyrz = gyrx,gyry,gyrz
+        oldgyrDT = nowDT
+    else:
+        oldgyrDT = nowDT
 
-        # Magnetometer
-        magx, magy, magz = getsensor3data(ser, CODE_MAG)
-        if magx is not None and magy is not None and magz is not None:
-            entrystr += "%d, %d, %d " % (magx, magy, magz)
-        else:
-            entrystr += "NA, NA, NA "
-
-        # End the entry
-        entrystr += ")"
-        entry1Li.append(entrystr)
-        nexttime = nexttime + datetime.timedelta(seconds=1/numpersec)
-
-    entry2 = "INSERT INTO SENSOR2data VALUES(" + "'%s', " % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Magnetometer
+    magx, magy, magz = getsensor3data(ser, CODE_MAG)
+    if magx is not None and magy is not None and magz is not None and outtol3(magx, magy, magz, oldmagx, oldmagy, oldmagz, magtol):
+        nowDT = datetime.datetime.now()
+        # only write old value if far enough in time
+        if abs(nowDT-oldmagDT) > timetol:
+            entrystr = "INSERT INTO magdata VALUES(" + "'%s', " % oldmagDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (oldmagx, oldmagy, oldmagz) + ")"
+            entryLi.append(entrystr)
+        entrystr = "INSERT INTO magdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (magx, magy, magz) + ")"
+        entryLi.append(entrystr)
+        oldmagx,oldmagy,oldmagz = magx,magy,magz
+        oldmagDT = nowDT
+    else:
+        oldmagDT = nowDT
+    
     # Barometer
-    barodata = getsensor1data(ser, CODE_PRS)
-    if barodata is not None:
-        entry2 += "%.2f, " % (barodata/100)
+    prs = getsensor1data(ser, CODE_PRS)
+    if prs is not None and outtol1(prs,oldprs,prstol):
+        nowDT = datetime.datetime.now()
+        # only write old value if far enough in time
+        if abs(nowDT-oldprsDT) > timetol:
+            entrystr = "INSERT INTO prsdata VALUES(" + "'%s', " % oldprsDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % oldprs + ")"
+            entryLi.append(entrystr)
+        entrystr = "INSERT INTO prsdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % prs + ")"
+        entryLi.append(entrystr)
+        oldprs = prs
+        oldprsDT = nowDT
     else:
-        entry2 += "NA, "
+        oldprsDT = nowDT
+        
     # Temp
-    tempdata = getsensor1data(ser, CODE_TMP)
-    if tempdata is not None:
-        entry2 += "%.1f " % (tempdata/10)
+    tmp = getsensor1data(ser, CODE_TMP)
+    if tmp is not None and outtol1(tmp,oldtmp,tmptol):
+        nowDT = datetime.datetime.now()
+        # only write old value if far enough in time
+        if abs(nowDT-oldtmpDT) > timetol:
+            entrystr = "INSERT INTO tmpdata VALUES(" + "'%s', " % oldtmpDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % oldtmp + ")"
+            entryLi.append(entrystr)
+        entrystr = "INSERT INTO tmpdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % tmp + ")"
+        entryLi.append(entrystr)
+        oldtmp = tmp
+        oldtmpDT = nowDT
     else:
-        entry2 += "NA "
+        oldtmpDT = nowDT
 
-    # End the entry
-    entry2 += ")"
- 
-    ## Add entry into database
-    print(datetime.datetime.now(), dbfn, "Added entry")
+    ## Add entries into database
     with con:
         cur = con.cursor()
-        for entry in entry1Li:
+        for entry in entryLi:
+            print(datetime.datetime.now(),"Added",entry)
             cur.execute(entry)
-        cur.execute(entry2)
+
+    # next time to take data
+    nexttime = nexttime + datetime.timedelta(seconds=1/numpersec)
 
 ## Cleanup
 ser.close()
