@@ -1,10 +1,10 @@
 body {
-	background: blue;
-	color: yellow;
+	background: #003262;
+	color: #FDB515;
 	padding:1%
 }
 .button {
-	fong: bold 15px Arial;
+	font: bold 15px Arial;
 	text-decoration: none;
 	background-color: #EEEEEE;
 	color: #333333;
