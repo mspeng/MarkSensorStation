@@ -50,7 +50,7 @@ devport = '/dev/ttyACM0'
 dbfn = 'sensorsData.db'
 numpersec = 10
 timetol =  datetime.timedelta(seconds=2/numpersec)
-ldrtol = 2  #
+ldrtol = 10  #
 acctol = 50 # 1/100 g
 gyrtol = 10
 magtol = 10

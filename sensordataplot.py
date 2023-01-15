@@ -10,7 +10,7 @@ ds = {}
 
 oneDLi = ['ldrdata','prsdata','tmpdata']
 ylims = {'ldrdata':[0, 500],
-         'prsdata':[100000,110000],
+         'prsdata':[90000,110000],
          'tmpdata':[100,350],
          'accdata':[-1300,1300],
          'gyrdata':[-200,200],

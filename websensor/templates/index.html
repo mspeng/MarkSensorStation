@@ -6,6 +6,7 @@
 	<body>
 		<h1>Mark's Sensor Data</h1>
 		<hr>
+		<h2>Latest Readings</h2>
 		<h3> {{ timeldr }} - LIGHT: {{ ldr }} </h3>
 		<h3> {{ timeacc }} - ACCELEROMETER: {{ accx }}g, {{ accy }}g, {{ accz }}g </h3>
 		<h3> {{ timegyr }} - GYROSCOPE: {{ gyrx }}, {{ gyry }}, {{ gyrz }} </h3> 
@@ -14,10 +15,16 @@
 		<h3> {{ timetmp }} - TEMPERATURE: {{ tmp }} oC </h3>
 		<h3> <a href="/" class="button">REFRESH</a></h3>
 		<hr>
-		<p> @2022 Developed by Mark</p>
+		<h2> HISTORICAL DATA </h2>
+		<p> Enter number of samples to retries:
+		<form method="POST">
+			<input name="numSamples" value = {{ numSamples }}>
+			<input type="submit">
+		</form></p>
+		<hr>
+		<img src="/plot/oneDdata" alt="Image Placeholder" width="100%">
+		<img src="/plot/threeDdata" alt="Image Placeholder" width="100%">
+		<hr>
+		<p> @2023 Developed by mspeng@gmail.com </p>
 	</body>
 </html>
-
-
-
-	 
