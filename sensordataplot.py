@@ -9,12 +9,12 @@ ts = {}
 ds = {}
 
 oneDLi = ['ldrdata','prsdata','tmpdata']
-ylims = {'ldrdata':[0, 500],
-         'prsdata':[90000,110000],
+ylims = {'ldrdata':[0, 300],
+         'prsdata':[98000,106000],
          'tmpdata':[100,350],
          'accdata':[-1300,1300],
          'gyrdata':[-200,200],
-         'magdata':[-100,100],
+         'magdata':[-150,150],
         }
 ylabels = {'ldrdata':'Light',
            'prsdata':'centiPascals',
@@ -27,7 +27,7 @@ threeDLi = ['accdata','gyrdata','magdata']
 for dataname in oneDLi:
     ts[dataname] = []
     ds[dataname] = []
-    for row in curs.execute("SELECT * FROM "+dataname+" DESC LIMIT 300"):
+    for row in curs.execute("SELECT * FROM "+dataname+" ORDER BY timestamp DESC LIMIT 300"):
         ts[dataname].append(dt.datetime.strptime(str(row[0]),"%Y-%m-%d %H:%M:%S:%f"))
         ds[dataname].append(row[1])
 for dataname in threeDLi:
@@ -35,7 +35,7 @@ for dataname in threeDLi:
     ds[dataname+'x'] = []
     ds[dataname+'y'] = []
     ds[dataname+'z'] = []
-    for row in curs.execute("SELECT * FROM "+dataname+" DESC LIMIT 300"):
+    for row in curs.execute("SELECT * FROM "+dataname+" ORDER BY timestamp DESC LIMIT 300"):
         ts[dataname].append(dt.datetime.strptime(str(row[0]),"%Y-%m-%d %H:%M:%S:%f"))
         ds[dataname+'x'].append(row[1])
         ds[dataname+'y'].append(row[2])

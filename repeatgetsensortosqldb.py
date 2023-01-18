@@ -50,10 +50,10 @@ devport = '/dev/ttyACM0'
 dbfn = 'sensorsData.db'
 numpersec = 10
 timetol =  datetime.timedelta(seconds=2/numpersec)
-ldrtol = 10  #
+ldrtol = 15  #
 acctol = 50 # 1/100 g
 gyrtol = 10
-magtol = 10
+magtol = 7
 prstol = 100 # 1 Pascal
 tmptol = 2 # 1/10 degrees Celsius
 
