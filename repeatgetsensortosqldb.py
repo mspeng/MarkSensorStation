@@ -158,7 +158,7 @@ with con:
 
 # next time to take data
 nexttime = datetime.datetime.now() + datetime.timedelta(seconds=1/numpersec)
-nexttime10 = nexttime + datetime.timedelta(seonds=10/numpersec)
+nexttime10 = nexttime + datetime.timedelta(seconds=10/numpersec)
 
 while True:
     entryLi = []
@@ -203,7 +203,7 @@ while True:
             entrystr = "INSERT INTO tmpdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % tmp + ")"
             entryLi.append(entrystr)
 
-        nexttime10 = datetime.datetime.now() + datetime.timedelta(seonds=10/numpersec)
+        nexttime10 = datetime.datetime.now() + datetime.timedelta(seconds=10/numpersec)
 
     ## Add entries into database
     with con:
