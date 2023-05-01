@@ -4,7 +4,7 @@
 
 import sys
 import serial
-import datetime
+import datetime as dt
 import sqlite3
 
 ## Definitions
@@ -49,7 +49,7 @@ def outtol3(val1x, val1y, val1z, val2x, val2y, val2z, tol):
 devport = '/dev/ttyACM0'
 dbfn = 'sensorsData.db'
 numpersec = 10
-timetol =  datetime.timedelta(seconds=2/numpersec)
+timetol =  dt.timedelta(seconds=2/numpersec)
 ldrtol = 15  #
 acctol = 50 # 1/100 g
 gyrtol = 10
@@ -73,7 +73,7 @@ entryLi = []
 # LDR
 for i in range(RETRIES):
     ldr = getsensor1data(ser, CODE_LDR)
-    nowDT = datetime.datetime.now()
+    nowDT = dt.datetime.now()
     if ldr is not None:
         entrystr = "INSERT INTO ldrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % ldr + ")"
         entryLi.append(entrystr)
@@ -86,7 +86,7 @@ else:
 # Accelerometer
 for i in range(RETRIES):
     accx, accy, accz = getsensor3data(ser, CODE_ACC)
-    nowDT = datetime.datetime.now()
+    nowDT = dt.datetime.now()
     if accx is not None and accy is not None and accz is not None:
         entrystr = "INSERT INTO accdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (accx, accy, accz) + ")"
         entryLi.append(entrystr)
@@ -99,7 +99,7 @@ else:
 # Gyroscope
 for i in range(RETRIES):
     gyrx, gyry, gyrz = getsensor3data(ser, CODE_GYR)
-    nowDT = datetime.datetime.now()
+    nowDT = dt.datetime.now()
     if gyrx is not None and gyry is not None and gyrz is not None:
         entrystr = "INSERT INTO gyrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (gyrx, gyry, gyrz) + ")"
         entryLi.append(entrystr)
@@ -112,7 +112,7 @@ else:
 # Magnetometer
 for i in range(RETRIES):
     magx, magy, magz = getsensor3data(ser, CODE_MAG)
-    nowDT = datetime.datetime.now()
+    nowDT = dt.datetime.now()
     if magx is not None and magy is not None and magz is not None:
         entrystr = "INSERT INTO magdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (magx, magy, magz) + ")"
         entryLi.append(entrystr)
@@ -125,7 +125,7 @@ else:
 # Pressure
 for i in range(RETRIES):
     prs = getsensor1data(ser, CODE_PRS)
-    nowDT = datetime.datetime.now()
+    nowDT = dt.datetime.now()
     if prs is not None:
         entrystr = "INSERT INTO prsdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % prs + ")"
         entryLi.append(entrystr)
@@ -138,7 +138,7 @@ else:
 # Temperature
 for i in range(RETRIES):
     tmp = getsensor1data(ser, CODE_TMP)
-    nowDT = datetime.datetime.now()
+    nowDT = dt.datetime.now()
     if tmp is not None:
         entrystr = "INSERT INTO tmpdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % tmp + ")"
         entryLi.append(entrystr)
@@ -153,45 +153,50 @@ else:
 with con:
     cur = con.cursor()
     for entry in entryLi:
-        print(datetime.datetime.now(), "Added",entry)
+        print(dt.datetime.now(), "Added",entry)
         cur.execute(entry)
 
 # next time to take data
-nexttime = datetime.datetime.now() + datetime.timedelta(seconds=1/numpersec)
-nexttime10 = nexttime + datetime.timedelta(seconds=10/numpersec)
+nexttime = dt.datetime.now() + dt.timedelta(seconds=1/numpersec)
+nexttime10 = nexttime + dt.timedelta(seconds=10/numpersec)
 
 while True:
     entryLi = []
-    while datetime.datetime.now() < nexttime: pass
+    while dt.datetime.now() < nexttime: pass
 
     # LDR - insert value only if it changed outside tolerance
     ldr = getsensor1data(ser, CODE_LDR)
+    nowDT = dt.datetime.now()
     if ldr is not None:
         entrystr = "INSERT INTO ldrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % ldr + ")"
         entryLi.append(entrystr)
 
     # Accel
     accx, accy, accz = getsensor3data(ser, CODE_ACC)
+    nowDT = dt.datetime.now()
     if accx is not None and accy is not None and accz is not None:
         entrystr = "INSERT INTO accdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (accx, accy, accz) + ")"
         entryLi.append(entrystr)
 
     # Gyro
     gyrx, gyry, gyrz = getsensor3data(ser, CODE_GYR)
+    nowDT = dt.datetime.now()
     if gyrx is not None and gyry is not None and gyrz is not None:
         entrystr = "INSERT INTO gyrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (gyrx, gyry, gyrz) + ")"
         entryLi.append(entrystr)
 
     # Magnetometer
     magx, magy, magz = getsensor3data(ser, CODE_MAG)
+    nowDT = dt.datetime.now()
     if magx is not None and magy is not None and magz is not None:
         entrystr = "INSERT INTO magdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (magx, magy, magz) + ")"
         entryLi.append(entrystr)
     
     # slower sampled by 10
-    if datetime.datetime.now() > nexttime10:
+    if dt.datetime.now() > nexttime10:
         # Barometer
         prs = getsensor1data(ser, CODE_PRS)
+        nowDT = dt.datetime.now()
         if prs is not None:
             entrystr = "INSERT INTO prsdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % prs + ")"
             entryLi.append(entrystr)
@@ -199,21 +204,22 @@ while True:
             
         # Temp
         tmp = getsensor1data(ser, CODE_TMP)
+        nowDT = dt.datetime.now()
         if tmp is not None:
             entrystr = "INSERT INTO tmpdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % tmp + ")"
             entryLi.append(entrystr)
 
-        nexttime10 = datetime.datetime.now() + datetime.timedelta(seconds=10/numpersec)
+        nexttime10 = dt.datetime.now() + dt.timedelta(seconds=10/numpersec)
 
     ## Add entries into database
     with con:
         cur = con.cursor()
         for entry in entryLi:
-            print(datetime.datetime.now(),"Added",entry)
+            print(dt.datetime.now(),"Added",entry)
             cur.execute(entry)
 
     # next time to take data
-    nexttime = nexttime + datetime.timedelta(seconds=1/numpersec)
+    nexttime = nexttime + dt.timedelta(seconds=1/numpersec)
 
 ## Cleanup
 ser.close()
