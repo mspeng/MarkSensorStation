@@ -6,7 +6,7 @@ import sys
 import serial
 import datetime as dt
 import sqlite3
-import numpy as py
+import numpy as np
 
 ## Definitions
 RETRIES = 10
@@ -39,8 +39,7 @@ def getsensor1data(serport,dataname):
 
 def getsensor3data(serport,dataname):
     if dataname not in THREEDLI:
-        return = None, None, None  # error condition
-    else:
+        return None, None, None  # error condition
     for i in range(RETRIES):
         serport.write(bytes.fromhex(CODEDI[dataname]))
         xcomp = bytestoint(serport.read(4))
@@ -59,7 +58,9 @@ def outtol3(val1x, val1y, val1z, val2x, val2y, val2z, tol):
 devport = '/dev/ttyACM0'
 dbfn = 'sensorsData.db'
 numpersec = 10
-TIMEWINDOW = 60    # seconds
+fastsampTD = dt.timedelta(seconds=1/numpersec)
+slowsampTD = dt.timedelta(seconds=10/numpersec)
+TIMEWINDOWTD = dt.timedelta(seconds=60)    # seconds
 #timetol =  dt.timedelta(seconds=2/numpersec)
 #ldrtol = 15  #
 #acctol = 50 # 1/100 g
@@ -109,35 +110,32 @@ with con:
         cur.execute(entry)
 
 # Final time for this time window
-timeWindowEnd = nowDT + dt.timedelta(seconds=TIMEWINDOW)
+timeWindowEnd = nowDT + TIMEWINDOWTD
 # next time to take data
-nextTimeFast = nowDT + dt.timedelta(seconds=1/numpersec)
-nextTimeSlow = nowDT + dt.timedelta(seconds=10/numpersec)
+nextTimeFast = nowDT + fastsampTD
+nextTimeSlow = nowDT + slowsampTD
 
 while True:
     # Gather raw data at fastest sampling rate
     oneDDataDi = {x:[] for x in ONEDLI}
-    threeDDataDi = {x+"x":[] for x in THREEDLI,
-                    y+"y":[] for y in THREEDLI,
-                    z+"z":[] for z in THREEDLI,
-                    }
+    threeDDataDi = {x+"x":[] for x in THREEDLI} | {y+"y":[] for y in THREEDLI} | {z+"z":[] for z in THREEDLI}
     timeDi = {x:[] for x in ONEDLI+THREEDLI}
-    while dt.datetime.now() < timeWindowEnd: pass
+    while dt.datetime.now() < timeWindowEnd: 
         while dt.datetime.now() < nextTimeFast: pass
-            for dataname in FASTLI:
-                if dataname in ONEDLI:
-                    val = getsensor1data(ser, dataname)
-                    nowDT = dt.datetime.now()
-                    timeDi[dataname].append(nowDT)
-                    oneDDataDi[dataname].append(val)
-                else:
-                    valx,valy,valz = getsensor3data(ser, dataname)
-                    nowDT = dt.datetime.now()
-                    timeDi[dataname].append(nowDT)
-                    threeDDataDi[dataname+'x'].append(valx)
-                    threeDDataDi[dataname+'y'].append(valy)
-                    threeDDataDi[dataname+'z'].append(valz)
-        nextTimeFast = nextTimeFast + dt.timedelta(seconds=10/numpersec)
+        for dataname in FASTLI:
+            if dataname in ONEDLI:
+                val = getsensor1data(ser, dataname)
+                nowDT = dt.datetime.now()
+                timeDi[dataname].append(nowDT)
+                oneDDataDi[dataname].append(val)
+            else:
+                valx,valy,valz = getsensor3data(ser, dataname)
+                nowDT = dt.datetime.now()
+                timeDi[dataname].append(nowDT)
+                threeDDataDi[dataname+'x'].append(valx)
+                threeDDataDi[dataname+'y'].append(valy)
+                threeDDataDi[dataname+'z'].append(valz)
+        nextTimeFast += fastsampTD
         if dt.datetime.now() > nextTimeSlow:
             for dataname in SLOWLI:
                 # Condition is redundant since SLOWLI is subset of ONEDLI, 
@@ -147,20 +145,20 @@ while True:
                     nowDT = dt.datetime.now()
                     timeDi[dataname].append(nowDT)
                     oneDDataDi[dataname].append(val)
-            nextTimeSlow = nextTimeSlow + dt.timedelta(seconds=1/numpersec)
+            nextTimeSlow += slowsampTD
 
     # Final time for this time window
-    timeWindowEnd = timeWindowEnd + dt.timedelta(seconds=TIMEWINDOW)
+    timeWindowEnd += TIMEWINDOWTD
     entryLi = []
     # Time window has passed; now check the data to wether it should be 
     # averaged or not or not
     for dataname in ONEDLI:
         varval = np.var(oneDDataDi[dataname])
         # check if little energy in data (variance) then average
-        if varval < varThresDi[dataname]:
+        if dataname in SLOWLI or varval < varThresDi[dataname]:
             # take middle time point and average value and overwrite the values
             timeDi[dataname] = [timeDi[dataname][len(timeDi[dataname])//2]]
-            oneDDataDi[dataname] = [np.avg(oneDDataDi[dataname])]
+            oneDDataDi[dataname] = [np.mean(oneDDataDi[dataname])]
         # Write the data
         for i in range(len(timeDi[dataname])):
             entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % oneDDataDi[dataname][i] + ")"
@@ -173,12 +171,12 @@ while True:
         if varvalx+varvaly+varvalz < varThresDi[dataname]:
             # take middle time point and average value and overwrite the values
             timeDi[dataname] = [timeDi[dataname][len(timeDi[dataname])//2]]
-            threeDDataDi[dataname+'x'] = [np.avg(threeDDataDi[dataname+'x'])]
-            threeDDataDi[dataname+'y'] = [np.avg(threeDDataDi[dataname+'y'])]
-            threeDDataDi[dataname+'z'] = [np.avg(threeDDataDi[dataname+'z'])]
+            threeDDataDi[dataname+'x'] = [np.mean(threeDDataDi[dataname+'x'])]
+            threeDDataDi[dataname+'y'] = [np.mean(threeDDataDi[dataname+'y'])]
+            threeDDataDi[dataname+'z'] = [np.mean(threeDDataDi[dataname+'z'])]
         # Write the data
         for i in range(len(timeDi[dataname])):
-            entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (threeDDataDi[dataname+'x'][i],threeDDataDi[dataname+'y'][i],threeDDataDi[dataname+'z'][i] + ")"
+            entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (threeDDataDi[dataname+'x'][i],threeDDataDi[dataname+'y'][i],threeDDataDi[dataname+'z'][i]) + ")"
             entryLi.append(entrystr)
     
     ## Add entries into database, hope this can finish fast so that it
@@ -188,55 +186,6 @@ while True:
         for entry in entryLi:
             print(dt.datetime.now(),"Added",entry)
             cur.execute(entry)
-
-'''
-    # LDR - insert value only if it changed outside tolerance
-    ldr = getsensor1data(ser, CODE_LDR)
-    nowDT = dt.datetime.now()
-    if ldr is not None:
-        entrystr = "INSERT INTO ldrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % ldr + ")"
-        entryLi.append(entrystr)
-
-    # Accel
-    accx, accy, accz = getsensor3data(ser, CODE_ACC)
-    nowDT = dt.datetime.now()
-    if accx is not None and accy is not None and accz is not None:
-        entrystr = "INSERT INTO accdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (accx, accy, accz) + ")"
-        entryLi.append(entrystr)
-
-    # Gyro
-    gyrx, gyry, gyrz = getsensor3data(ser, CODE_GYR)
-    nowDT = dt.datetime.now()
-    if gyrx is not None and gyry is not None and gyrz is not None:
-        entrystr = "INSERT INTO gyrdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (gyrx, gyry, gyrz) + ")"
-        entryLi.append(entrystr)
-
-    # Magnetometer
-    magx, magy, magz = getsensor3data(ser, CODE_MAG)
-    nowDT = dt.datetime.now()
-    if magx is not None and magy is not None and magz is not None:
-        entrystr = "INSERT INTO magdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (magx, magy, magz) + ")"
-        entryLi.append(entrystr)
-    
-    # slower sampled by 10
-    if dt.datetime.now() > nexttime10:
-        # Barometer
-        prs = getsensor1data(ser, CODE_PRS)
-        nowDT = dt.datetime.now()
-        if prs is not None:
-            entrystr = "INSERT INTO prsdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % prs + ")"
-            entryLi.append(entrystr)
-            oldprs = prs
-            
-        # Temp
-        tmp = getsensor1data(ser, CODE_TMP)
-        nowDT = dt.datetime.now()
-        if tmp is not None:
-            entrystr = "INSERT INTO tmpdata VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % tmp + ")"
-            entryLi.append(entrystr)
-
-        nexttime10 = dt.datetime.now() + dt.timedelta(seconds=10/numpersec)
-'''
 
 ## Cleanup
 con.close()
