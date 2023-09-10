@@ -2,7 +2,7 @@
 
 # Script for repeated getting info
 
-import sys
+import sys,os
 import serial
 import datetime as dt
 import sqlite3
@@ -48,12 +48,6 @@ def getsensor3data(serport,dataname):
         if xcomp is not None and ycomp is not None and zcomp is not None:
             return xcomp, ycomp, zcomp
 
-def outtol1(val1, val2, tol):
-    return (abs(val1-val2) > tol)
-
-def outtol3(val1x, val1y, val1z, val2x, val2y, val2z, tol):
-    return ((val1x-val2x)**2 + (val1y-val2y)**2 + (val1z-val2z)**2)**0.5 > tol
-
 ## Parameters
 devport = '/dev/ttyACM0'
 dbfn = 'sensorsData.db'
@@ -85,6 +79,7 @@ ser.flushOutput()
 con = sqlite3.connect(dbfn)
 
 # Initial data to be written whenever data starts to be collected
+# Write to db and csv file for shortterm
 entryLi = []
 # 1-D data
 for dataname in ONEDLI:
@@ -93,6 +88,8 @@ for dataname in ONEDLI:
     if val is not None:
         entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % val + ")"
         entryLi.append(entrystr)
+        with open("%s_%s.csv" % (dataname,nowDT.strftime("%Y%m%d")),"a") as f:
+            f.write("%s,%s\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],val))
 
 # 3-D data
 for dataname in THREEDLI:
@@ -101,6 +98,8 @@ for dataname in THREEDLI:
     if valx is not None and valy is not None and valz is not None:
         entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (valx, valy, valz) + ")"
         entryLi.append(entrystr)
+        with open("%s_%s.csv" % (dataname,nowDT.strftime("%Y%m%d")),"a") as f:
+            f.write("%s,%s,%s,%s\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],valx,valy,valz))
 
 ## Add entries into database
 with con:
@@ -163,6 +162,8 @@ while True:
         for i in range(len(timeDi[dataname])):
             entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % oneDDataDi[dataname][i] + ")"
             entryLi.append(entrystr)
+            with open("%s_%s.csv" % (dataname,nowDT.strftime("%Y%m%d")),"a") as f:
+                f.write("%s,%s\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],oneDDataDi[dataname][i]))
     for dataname in THREEDLI:
         varvalx = np.var(threeDDataDi[dataname+'x'])
         varvaly = np.var(threeDDataDi[dataname+'y'])
@@ -178,6 +179,8 @@ while True:
         for i in range(len(timeDi[dataname])):
             entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (threeDDataDi[dataname+'x'][i],threeDDataDi[dataname+'y'][i],threeDDataDi[dataname+'z'][i]) + ")"
             entryLi.append(entrystr)
+            with open("%s_%s.csv" % (dataname,nowDT.strftime("%Y%m%d")),"a") as f:
+                f.write("%s,%s,%s,%s\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],threeDDataDi[dataname+'x'][i],threeDDataDi[dataname+'y'][i],threeDDataDi[dataname+'z'][i])) 
     
     ## Add entries into database, hope this can finish fast so that it
     # doesn't mess up the next sampling time
@@ -187,6 +190,12 @@ while True:
             print(dt.datetime.now(),"Added",entry)
             cur.execute(entry)
 
+    ## Delete short term data files that are older than one day
+    oldDT = nowDT - dt.timedelta(days=2)
+    for filename in os.listdir('.'):
+        if filename.endswith('.csv') and dt.datetime.strptime(filename.split('_')[-1].split('.')[0],"%Y%m%d") < oldDT:
+            os.remove(filename)
+    
 ## Cleanup
 con.close()
 ser.close()
