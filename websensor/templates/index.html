@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 	<head>
 		<title>Mark's Sensor Data</title>
+		<meta http-equiv="refresh" content="600">
 		<link rel="stylesheet" href='../static/style.css'/>
 	</head>
 	<body>
@@ -13,14 +14,8 @@
 		<h4> {{ timemag }} - MAGNETOMETER: {{ magx }}, {{ magy }}, {{ magz }} </h4> 
 		<h4> {{ timeprs }} - PRESSURE: {{ prs }} Pascals </h4>
 		<h4> {{ timetmp }} - TEMPERATURE: {{ tmp }} oC </h4>
-		<h4> <a href="/" class="button">REFRESH</a></h4>
-		<hr>
-		<h2> HISTORICAL DATA </h2>
-		<p> Enter number of samples to retries:
-		<form method="POST">
-			<input name="numSamples" value = {{ numSamples }}>
-			<input type="submit">
-		</form></p>
+		<h4> <a href="/" class="button">REFRESH NOW</a></h4>
+		This page automatically refreshes every 10 minutes.
 		<hr>
 		<img src="/plot/oneDdata" alt="Image Placeholder" width="100%">
 		<img src="/plot/threeDdata" alt="Image Placeholder" width="100%">

@@ -28,20 +28,23 @@ for dataname in ONEDLI:
     for filename in csvFilenames:
         if dataname in filename:
             if dataname not in valsDi.keys():
-                valsDi[dataname] = np.loadtxt(filename,usecols=(1),delimiter=",")
-                tsDi[dataname] = np.loadtxt(filename,usecols=(0),converters={0:lambda s:dt.datetime.strptime(str(s,'UTF-8'),"%Y-%m-%d %H:%M:%S:%f")},dtype='datetime64',delimiter=",")
+                valsDi[dataname] = np.loadtxt(filename,usecols=(1),delimiter=",",max_rows=10000)
+                tsDi[dataname] = np.loadtxt(filename,usecols=(0),converters={0:lambda s:dt.datetime.strptime(str(s,'UTF-8'),"%Y-%m-%d %H:%M:%S:%f")},dtype='datetime64',delimiter=",",max_rows=len(valsDi[dataname]))
             else:
-                valsDi[dataname] = np.append(valsDi[dataname],np.loadtxt(filename,usecols=(1,),delimiter=","))
-                tsDi[dataname] = np.append(tsDi[dataname],np.loadtxt(filename,usecols=(0),converters={0:lambda s:dt.datetime.strptime(str(s,'UTF-8'),"%Y-%m-%d %H:%M:%S:%f")},dtype='datetime64',delimiter=","))
+                valsDi[dataname] = np.append(valsDi[dataname],np.loadtxt(filename,usecols=(1,),delimiter=",",max_rows=10000))
+                tsDi[dataname] = np.append(tsDi[dataname],np.loadtxt(filename,usecols=(0),converters={0:lambda s:dt.datetime.strptime(str(s,'UTF-8'),"%Y-%m-%d %H:%M:%S:%f")},dtype='datetime64',delimiter=",",max_rows=len(valsDi[dataname])-len(tsDi[dataname])))
+            print(dataname,len(tsDi[dataname]),len(valsDi[dataname]))
 for dataname in THREEDLI:
     for filename in csvFilenames:
         if dataname in filename:
             if dataname not in valsDi.keys():
-                valsDi[dataname] = np.loadtxt(filename,usecols=(1,2,3),delimiter=",")
-                tsDi[dataname] = np.loadtxt(filename,usecols=(0),converters={0:lambda s:dt.datetime.strptime(str(s,'UTF-8'),"%Y-%m-%d %H:%M:%S:%f")},dtype='datetime64',delimiter=",")
+                valsDi[dataname] = np.loadtxt(filename,usecols=(1,2,3),delimiter=",",max_rows=10000)
+                tsDi[dataname] = np.loadtxt(filename,usecols=(0),converters={0:lambda s:dt.datetime.strptime(str(s,'UTF-8'),"%Y-%m-%d %H:%M:%S:%f")},dtype='datetime64',delimiter=",",max_rows=len(valsDi[dataname]))
             else:
-                valsDi[dataname] = np.append(valsDi[dataname],np.loadtxt(filename,usecols=(1,2,3),delimiter=","),axis=0)
-                tsDi[dataname] = np.append(tsDi[dataname],np.loadtxt(filename,usecols=(0),converters={0:lambda s:dt.datetime.strptime(str(s,'UTF-8'),"%Y-%m-%d %H:%M:%S:%f")},dtype='datetime64',delimiter=","))
+                valsDi[dataname] = np.append(valsDi[dataname],np.loadtxt(filename,usecols=(1,2,3),delimiter=",",max_rows=10000),axis=0)
+                tsDi[dataname] = np.append(tsDi[dataname],np.loadtxt(filename,usecols=(0),converters={0:lambda s:dt.datetime.strptime(str(s,'UTF-8'),"%Y-%m-%d %H:%M:%S:%f")},dtype='datetime64',delimiter=",",max_rows=len(valsDi[dataname])-len(tsDi[dataname])))
+            print(dataname,len(tsDi[dataname]),len(valsDi[dataname]))
+
 
 # Plot
 fig0,ax0 = plt.subplots(3,1,sharex=True,figsize=[10,8])

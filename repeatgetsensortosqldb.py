@@ -55,14 +55,7 @@ numpersec = 10
 fastsampTD = dt.timedelta(seconds=1/numpersec)
 slowsampTD = dt.timedelta(seconds=10/numpersec)
 TIMEWINDOWTD = dt.timedelta(seconds=60)    # seconds
-#timetol =  dt.timedelta(seconds=2/numpersec)
-#ldrtol = 15  #
-#acctol = 50 # 1/100 g
-#gyrtol = 10
-#magtol = 7
-#prstol = 100 # 1 Pascal
-#tmptol = 2 # 1/10 degrees Celsius
-varThresDi = {'ldr':25,
+varThresDi = {'ldr':75,
               'acc':49,
               'gyr':4,
               'mag':25,
@@ -89,7 +82,7 @@ for dataname in ONEDLI:
         entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % val + ")"
         entryLi.append(entrystr)
         with open("%s_%s.csv" % (dataname,nowDT.strftime("%Y%m%d")),"a") as f:
-            f.write("%s,%s\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],val))
+            f.write("%s,%d\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],val))
 
 # 3-D data
 for dataname in THREEDLI:
@@ -99,7 +92,7 @@ for dataname in THREEDLI:
         entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (valx, valy, valz) + ")"
         entryLi.append(entrystr)
         with open("%s_%s.csv" % (dataname,nowDT.strftime("%Y%m%d")),"a") as f:
-            f.write("%s,%s,%s,%s\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],valx,valy,valz))
+            f.write("%s,%d,%d,%d\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],valx,valy,valz))
 
 ## Add entries into database
 with con:
@@ -163,7 +156,7 @@ while True:
             entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d" % oneDDataDi[dataname][i] + ")"
             entryLi.append(entrystr)
             with open("%s_%s.csv" % (dataname,nowDT.strftime("%Y%m%d")),"a") as f:
-                f.write("%s,%s\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],oneDDataDi[dataname][i]))
+                f.write("%s,%d\n" % (timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],oneDDataDi[dataname][i]))
     for dataname in THREEDLI:
         varvalx = np.var(threeDDataDi[dataname+'x'])
         varvaly = np.var(threeDDataDi[dataname+'y'])
@@ -180,7 +173,7 @@ while True:
             entrystr = "INSERT INTO " + "%s" % (dataname+"data") + " VALUES(" + "'%s', " % timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4] + "%d, %d, %d" % (threeDDataDi[dataname+'x'][i],threeDDataDi[dataname+'y'][i],threeDDataDi[dataname+'z'][i]) + ")"
             entryLi.append(entrystr)
             with open("%s_%s.csv" % (dataname,nowDT.strftime("%Y%m%d")),"a") as f:
-                f.write("%s,%s,%s,%s\n" % (nowDT.strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],threeDDataDi[dataname+'x'][i],threeDDataDi[dataname+'y'][i],threeDDataDi[dataname+'z'][i])) 
+                f.write("%s,%d,%d,%d\n" % (timeDi[dataname][i].strftime("%Y-%m-%d %H:%M:%S:%f")[:-4],threeDDataDi[dataname+'x'][i],threeDDataDi[dataname+'y'][i],threeDDataDi[dataname+'z'][i])) 
     
     ## Add entries into database, hope this can finish fast so that it
     # doesn't mess up the next sampling time
