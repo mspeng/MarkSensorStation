@@ -131,14 +131,14 @@ def plot_oneDdata():
         ax0[i].set_ylabel(YLABELS[dataname])
         ax0[i].grid()
     fig0.tight_layout()
-    #fig0.savefig('oneData.png')
+    fig0.savefig('oneData.png')
 
-    canvas = FigureCanvas(fig0)
-    output = io.BytesIO()
-    canvas.print_png(output)
-    response = fl.make_response(output.getvalue())
-    response.mimetype = 'image/png'
-    return response
+    #canvas = FigureCanvas(fig0)
+    #output = io.BytesIO()
+    #canvas.print_png(output)
+    #response = fl.make_response(output.getvalue())
+    #response.mimetype = 'image/png'
+    #return response
 
 @app.route('/plot/threeDdata')
 def plot_threeDdata():
@@ -163,14 +163,14 @@ def plot_threeDdata():
         ax1[i].legend(['x','y','z'])
         ax1[i].grid()
     fig1.tight_layout()
-    #fig1.savefig('threeData.png')
+    fig1.savefig('threeData.png')
 
-    canvas = FigureCanvas(fig1)
-    output = io.BytesIO()
-    canvas.print_png(output)
-    response = fl.make_response(output.getvalue())
-    response.mimetype = 'image/png'
-    return response
+    #canvas = FigureCanvas(fig1)
+    #output = io.BytesIO()
+    #canvas.print_png(output)
+    #response = fl.make_response(output.getvalue())
+    #response.mimetype = 'image/png'
+    #return response
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=80, debug=False)

@@ -17,8 +17,10 @@
 		<h4> <a href="/" class="button">REFRESH NOW</a></h4>
 		This page automatically refreshes every 10 minutes.
 		<hr>
-		<img src="/plot/oneDdata" alt="Image Placeholder" width="100%">
-		<img src="/plot/threeDdata" alt="Image Placeholder" width="100%">
+		<img src="{{url_for('static', filename='oneDdata.png')}}" width="100%">
+		<img src="{{url_for('static', filename='threeDdata.png')}}" width="100%">
+		
+
 		<hr>
 		<p> @2023 Developed by mspeng@gmail.com </p>
 	</body>
