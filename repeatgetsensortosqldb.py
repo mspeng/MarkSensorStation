@@ -55,7 +55,7 @@ numpersec = 10
 fastsampTD = dt.timedelta(seconds=1/numpersec)
 slowsampTD = dt.timedelta(seconds=10/numpersec)
 TIMEWINDOWTD = dt.timedelta(seconds=60)    # seconds
-varThresDi = {'ldr':200,
+varThresDi = {'ldr':400,
               'acc':49,
               'gyr':4,
               'mag':25,
